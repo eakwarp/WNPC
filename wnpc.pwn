@@ -32,7 +32,7 @@ enum walknpcInfo
 	walknpc_ID,//не сохранять
 	walknpc_NextNode,//не сохранять
 	walknpc_OldNode,//не сохранять
-	//walknpc_Nodes,//не сохранять
+	walknpc_Nodes,//не сохранять
 	walknpc_Created,//не сохранять
 	//walknpc_Timer//не сохранять
 }
@@ -74,6 +74,21 @@ public OnGameModeInit()
     SetTimer("WNPCInit", 1000,0);
     return 1;
 }
+public OnGameModeExit()
+{
+    WNPCPrint();
+    return 1;
+}
+
+stock WNPCPrint()
+{
+    for(new i; i<sizeof(WalkNPC); i++)
+    {
+        if(WalkNPC[i][walknpc_Nodes]<3)
+            printf("WNPC %d, nodes after start server %d",WalkNPC[i][walknpc_Nodes]);
+    }
+    return 1;
+}
 
 public OnNPCCreate(npcid)
 {
@@ -97,6 +112,7 @@ public WalkNPCStartMove(i)
     new thisnodeid=WalkNPC[i][walknpc_OldNode];
 	NPC_SetPos(WalkNPC[i][walknpc_ID],WalkNodeInfo[thisnodeid][walknodeX],WalkNodeInfo[thisnodeid][walknodeY],WalkNodeInfo[thisnodeid][walknodeZ]);
     WNPCNextNode(i);
+    //SetTimerEx("WNPCCheckPos", 100, 1, "d", i);
     printf("wnpc %d, nodeid %d walk started",i,thisnodeid);
 	return 1;
 }
@@ -179,6 +195,24 @@ public WNPCreate(i)
     return 1;
 }
 
+forward WNPCCheckPos(i);
+public WNPCCheckPos(i)
+{
+    new Float:pos[3];
+    NPC_GetPos(WalkNPC[i][walknpc_ID],pos[0],pos[1],pos[2]);
+    new Float:dist=GetDistance(pos[0],pos[1],pos[2], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ]);
+    if(dist<1.0)
+    {
+        WNPCNextNode(i);
+    }		
+    return 1;
+}
+
+stock Float:GetDistance(Float:x1, Float:y1, Float:z1, Float:x2, Float:y2, Float:z2)
+{
+    return floatsqroot( (( x1 - x2 ) * ( x1 - x2 )) + (( y1 - y2 ) * ( y1 - y2 )) + (( z1 - z2 ) * ( z1 - z2 )) );
+}
+
 public OnPlayerCommandText(playerid, cmdtext[])
 {
     if (!strcmp(cmdtext, "/create", true))
@@ -242,7 +276,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				WalkNPCStartMove(i);
 			}
 		}
-		SendClientMessage(playerid,COLOR_WHITE,"All WNPC restarted");
+		SendClientMessage(playerid,COLOR_WHITE,"All WNPC Restarted");
         return 1;
     }
     if (!strcmp(cmdtext, "/stop", true))
@@ -263,11 +297,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		{
 		    if(WalkNPC[i][walknpc_Valid]==1)
 			{
-				NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ]+0.2, 1);
-			
+				NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
 			}
 		}
-		SendClientMessage(playerid,COLOR_WHITE,"All WNPC starded");
+		SendClientMessage(playerid,COLOR_WHITE,"All WNPC Started");
         return 1;
     }
     if (!strcmp(cmdtext, "/show", true))
@@ -341,7 +374,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
     {
         new Float:X,Float:Y,Float:Z;
         GetPlayerPos(playerid, X,Y,Z);
-        CreateVehicle(411, X,Y,Z, 0.0, -1, -1, 60000);
+        CreateVehicle(451, X,Y,Z, 0.0, -1, -1, 60000);
         SendClientMessage(playerid,COLOR_WHITE,"One hot turismo for you");
         return 1;
     }
@@ -353,8 +386,8 @@ public OnNPCFinishMove(npcid)
 {
     printf("OnNPCFinishMove NPC %d, WNPC %d finish move",npcid,PlayeridToWNPCid[npcid]);
     //NPC_StopMove(npcid);
-    SetTimerEx("WNPCNextNode", 100, 0, "d", PlayeridToWNPCid[npcid]);
-	//WNPCNextNode(PlayeridToWNPCid[npcid]);
+    //SetTimerEx("WNPCNextNode", 1000, 0, "d", PlayeridToWNPCid[npcid]);
+	WNPCNextNode(PlayeridToWNPCid[npcid]);
 	return 1;
 }
 forward WNPCNextNode(i);
@@ -410,7 +443,9 @@ public WNPCNextNode(i)
 	}
    	WalkNPC[i][walknpc_OldNode]=thisnodeid;
 	WalkNPC[i][walknpc_NextNode]=nextnodeid;
-	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ]+0.2, 1);
-	printf("NPD %d, WNPC %d, moved to nextnode %d",WalkNPC[i][walknpc_ID],i,nextnodeid);
+	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
+	printf("NPC %d, WNPC %d, moved to nextnode %d",WalkNPC[i][walknpc_ID],i,nextnodeid);
+    WalkNPC[i][walknpc_Nodes]++;
 	return 1;
+
 }
