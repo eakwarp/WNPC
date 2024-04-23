@@ -263,7 +263,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		{
 		    if(WalkNPC[i][walknpc_Valid]==1)
 			{
-				NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
+				NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ]+0.2, 1);
 			
 			}
 		}
@@ -351,15 +351,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 
 public OnNPCFinishMove(npcid)
 {
-    printf("NPC %d, finish move",npcid);
-    NPC_StopMove(npcid);
-	WNPCNextNode(PlayeridToWNPCid[npcid]);
+    printf("OnNPCFinishMove NPC %d, WNPC %d finish move",npcid,PlayeridToWNPCid[npcid]);
+    //NPC_StopMove(npcid);
+    SetTimerEx("WNPCNextNode", 100, 0, "d", PlayeridToWNPCid[npcid]);
+	//WNPCNextNode(PlayeridToWNPCid[npcid]);
 	return 1;
 }
-forward WNPCNextNode(npcid);
-public WNPCNextNode(npcid)
+forward WNPCNextNode(i);
+public WNPCNextNode(i)
 {
-    new i=npcid;
 	new thisnodeid=WalkNPC[i][walknpc_NextNode];
 	new nd[5];
 	new mnodes=0;
@@ -410,7 +410,7 @@ public WNPCNextNode(npcid)
 	}
    	WalkNPC[i][walknpc_OldNode]=thisnodeid;
 	WalkNPC[i][walknpc_NextNode]=nextnodeid;
-	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
-	printf("wnpc %d, moved to nextnode %d",i,nextnodeid);
+	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ]+0.2, 1);
+	printf("NPD %d, WNPC %d, moved to nextnode %d",WalkNPC[i][walknpc_ID],i,nextnodeid);
 	return 1;
 }
