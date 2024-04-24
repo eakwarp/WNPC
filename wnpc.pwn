@@ -98,6 +98,7 @@ public OnNPCCreate(npcid)
 forward WNPCSpawn(npcid);
 public WNPCSpawn(npcid)
 {
+    SetPlayerSkin(npcid,WalkNPC[PlayeridToWNPCid[npcid]][walknpc_Skin]);
     NPC_Spawn(npcid);
     SetTimerEx("WalkNPCStartMove", 100, 0, "d", PlayeridToWNPCid[npcid]);
     printf("NPC ID %d WNPC %d has connected", npcid, PlayeridToWNPCid[npcid]);
@@ -194,7 +195,10 @@ public WNPCreate(i)
         SetTimerEx("WNPCreate", 10, 0, "d", i);
     return 1;
 }
-
+stock Float:GetDistance(Float:x1, Float:y1, Float:z1, Float:x2, Float:y2, Float:z2)
+{
+    return floatsqroot( (( x1 - x2 ) * ( x1 - x2 )) + (( y1 - y2 ) * ( y1 - y2 )) + (( z1 - z2 ) * ( z1 - z2 )) );
+}
 forward WNPCCheckPos(i);
 public WNPCCheckPos(i)
 {
@@ -208,10 +212,7 @@ public WNPCCheckPos(i)
     return 1;
 }
 
-stock Float:GetDistance(Float:x1, Float:y1, Float:z1, Float:x2, Float:y2, Float:z2)
-{
-    return floatsqroot( (( x1 - x2 ) * ( x1 - x2 )) + (( y1 - y2 ) * ( y1 - y2 )) + (( z1 - z2 ) * ( z1 - z2 )) );
-}
+
 
 public OnPlayerCommandText(playerid, cmdtext[])
 {
