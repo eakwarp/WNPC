@@ -385,7 +385,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 
 public OnNPCFinishMove(npcid)
 {
-    printf("OnNPCFinishMove NPC %d, WNPC %d finish move",npcid,PlayeridToWNPCid[npcid]);
+    //printf("OnNPCFinishMove NPC %d, WNPC %d finish move",npcid,PlayeridToWNPCid[npcid]);
     //NPC_StopMove(npcid);
     //SetTimerEx("WNPCNextNode", 1000, 0, "d", PlayeridToWNPCid[npcid]);
     if(WalkNPC[PlayeridToWNPCid[npcid]][walknpc_PlayerID]==INVALID_PLAYER_ID)
@@ -448,7 +448,7 @@ public WNPCNextNode(i)
    	WalkNPC[i][walknpc_OldNode]=thisnodeid;
 	WalkNPC[i][walknpc_NextNode]=nextnodeid;
 	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
-	printf("NPC %d, WNPC %d, moved to nextnode %d",WalkNPC[i][walknpc_ID],i,nextnodeid);
+	//printf("NPC %d, WNPC %d, moved to nextnode %d",WalkNPC[i][walknpc_ID],i,nextnodeid);
     WalkNPC[i][walknpc_Nodes]++;
 	return 1;
 
@@ -521,6 +521,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
                     KillTimer(WNPCFollowTimer[wnpcid]);
                     WNPCFollowTimer[wnpcid]=0;
                 }
+                WalkNPC[wnpcid][walknpc_NextNode]=GetClosestWNPCNode(wnpcid);
                 NPC_Move(WalkNPC[wnpcid][walknpc_ID], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeZ], 1);
                 WalkNPC[wnpcid][walknpc_PlayerID]=INVALID_PLAYER_ID;
             }
@@ -536,6 +537,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
                     KillTimer(WNPCFollowTimer[wnpcid]);
                     WNPCFollowTimer[wnpcid]=0;
                 }
+                WalkNPC[wnpcid][walknpc_NextNode]=GetClosestWNPCNode(wnpcid);
                 NPC_Move(WalkNPC[wnpcid][walknpc_ID], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeZ], 1);
                 WalkNPC[wnpcid][walknpc_PlayerID]=INVALID_PLAYER_ID;
             }
@@ -583,7 +585,7 @@ public FollowPlayer(wnpcid,playerid)
             KillTimer(WNPCFollowTimer[wnpcid]);
             WNPCFollowTimer[wnpcid]=0;
         }
-    
+        WalkNPC[wnpcid][walknpc_NextNode]=GetClosestWNPCNode(wnpcid);
         NPC_Move(WalkNPC[wnpcid][walknpc_ID], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeZ], 1);
         WalkNPC[wnpcid][walknpc_PlayerID]=INVALID_PLAYER_ID;
     }
@@ -611,5 +613,27 @@ stock GetClosestWNPC(playerid)
 		}
 	}
 	if(dist>4.0) return -1;
+	return biz;
+}
+
+stock GetClosestWNPCNode(wnpcid)
+{
+	new biz=-1;
+	new Float:dist=99999.9;
+	new Float:pos[3];
+	new Float:dist2;
+	NPC_GetPos(WalkNPC[wnpcid][walknpc_ID],pos[0],pos[1],pos[2]);
+	for(new i; i<sizeof(WalkNodeInfo); i++)
+	{
+		if(WalkNodeInfo[i][walknodeValid]==1)
+		{
+            dist2=GetDistance(pos[0],pos[1],pos[2],WalkNodeInfo[i][walknodeX],WalkNodeInfo[i][walknodeY],WalkNodeInfo[i][walknodeZ]);
+            if(dist2<dist)
+            {
+                dist=dist2;
+                biz=i;
+            }
+		}
+	}
 	return biz;
 }
