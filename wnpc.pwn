@@ -19,6 +19,8 @@ forward OnNPCCreate(npcid);
 forward OnNPCDestroy(npcid);
 
 new PlayeridToWNPCid[2048];
+new SelectedPlayerid[MAX_PLAYERS];
+
 
 enum walknpcInfo
 {
@@ -34,9 +36,11 @@ enum walknpcInfo
 	walknpc_OldNode,//не сохранять
 	walknpc_Nodes,//не сохранять
 	walknpc_Created,//не сохранять
+    walknpc_PlayerID//dont save
 	//walknpc_Timer//не сохранять
 }
 //new WalkNPC[MAX_WALKNPC][walknpcInfo]
+
 
 enum walknodeinfo
 {
@@ -57,7 +61,7 @@ enum walknodeinfo
 
 #include "wnpcmisc.inc"
 //new WalkNodeInfo[MAX_WALKNODE][walknodeinfo]
-
+new WNPCFollowTimer[sizeof(WalkNPC)];
 new Float:WalkNPCPosX[sizeof(WalkNPC)];
 new Float:WalkNPCPosY[sizeof(WalkNPC)];
 new Float:WalkNPCPosZ[sizeof(WalkNPC)];
@@ -98,8 +102,9 @@ public OnNPCCreate(npcid)
 forward WNPCSpawn(npcid);
 public WNPCSpawn(npcid)
 {
-    SetPlayerSkin(npcid,WalkNPC[PlayeridToWNPCid[npcid]][walknpc_Skin]);
+    WalkNPC[PlayeridToWNPCid[npcid]][walknpc_PlayerID]=INVALID_PLAYER_ID;
     NPC_Spawn(npcid);
+    SetPlayerSkin(npcid,WalkNPC[PlayeridToWNPCid[npcid]][walknpc_Skin]);
     SetTimerEx("WalkNPCStartMove", 100, 0, "d", PlayeridToWNPCid[npcid]);
     printf("NPC ID %d WNPC %d has connected", npcid, PlayeridToWNPCid[npcid]);
     return 1;
@@ -124,19 +129,14 @@ public OnNPCDestroy(npcid)
     return 1;
 }
 
-forward FollowPlayer(playerid);
-public FollowPlayer(playerid)
-{
-    new Float:x, Float:y, Float:z;
-    GetPlayerPos(playerid, x, y, z);
-    NPC_Move(0, x, y, z, 2);
-}
+
 
 public OnPlayerConnect(playerid)
 {
     if(NPC_IsValid(playerid))
         return 1;
     SendClientMessage(playerid,COLOR_WHITE,"cmds: /car /gotols /gotofk /create /destroy /check /start /stop /restart /show /hide");
+    SendClientMessage(playerid,COLOR_WHITE,"press Y near any walking NPC");
     return 1;
 }
 
@@ -449,4 +449,164 @@ public WNPCNextNode(i)
     WalkNPC[i][walknpc_Nodes]++;
 	return 1;
 
+}
+public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
+{
+    switch(newkeys)
+	{
+        case KEY_YES:
+        {
+            if(FindClosestWNPCAndStopIT(playerid))
+                return 1;
+        }
+    }
+    return 1;
+}
+
+forward FindClosestWNPCAndStopIT(playerid);
+public FindClosestWNPCAndStopIT(playerid)
+{
+	new wnpcid = -1;
+	wnpcid=GetClosestWNPC(playerid);
+	if (wnpcid != -1)
+    {
+        if(WalkNPC[wnpcid][walknpc_PlayerID]==INVALID_PLAYER_ID)
+        {
+            NPC_StopMove(WalkNPC[wnpcid][walknpc_ID]);
+            SelectedPlayerid[playerid]=wnpcid;
+            
+            new stra[144];
+            format(stra,sizeof(stra),"WNPC %d, %s",wnpcid,WalkNPC[wnpcid][walknpc_Name]);
+            ShowPlayerDialog(playerid,1,DIALOG_STYLE_MSGBOX,stra,"Follow you?","Follow Me","Cancel");
+            return 1;
+        }
+        else
+        {
+            NPC_StopMove(WalkNPC[wnpcid][walknpc_ID]);
+            SelectedPlayerid[playerid]=wnpcid;
+
+            new stra[144];
+            format(stra,sizeof(stra),"WNPC %d, %s",wnpcid,WalkNPC[wnpcid][walknpc_Name]);
+            ShowPlayerDialog(playerid,2,DIALOG_STYLE_MSGBOX,stra,"Stop follow and back to node?","Back","Follow Me");
+        }
+	}
+	return 0;
+}
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
+{
+    switch (dialogid)
+    {
+        case 1:
+        {
+            if(response)
+            {
+                new wnpcid=SelectedPlayerid[playerid];
+                if(WNPCFollowTimer[wnpcid]!=0)
+                {
+                    KillTimer(WNPCFollowTimer[wnpcid]);
+                    WNPCFollowTimer[wnpcid]=0;
+                }
+                WalkNPC[wnpcid][walknpc_PlayerID]=playerid;
+                FollowPlayer(wnpcid,playerid);
+                WNPCFollowTimer[wnpcid]=SetTimerEx("FollowPlayer", 2000, 1, "dd", wnpcid,playerid);
+            }
+            else
+            {
+                new wnpcid=SelectedPlayerid[playerid];
+                if(WNPCFollowTimer[wnpcid]!=0)
+                {
+                    KillTimer(WNPCFollowTimer[wnpcid]);
+                    WNPCFollowTimer[wnpcid]=0;
+                }
+                NPC_Move(WalkNPC[wnpcid][walknpc_ID], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeZ], 1);
+                WalkNPC[wnpcid][walknpc_PlayerID]=INVALID_PLAYER_ID;
+            }
+            return 1;
+        }
+        case 2:
+        {
+            if(response)
+            {
+                new wnpcid=SelectedPlayerid[playerid];
+                if(WNPCFollowTimer[wnpcid]!=0)
+                {
+                    KillTimer(WNPCFollowTimer[wnpcid]);
+                    WNPCFollowTimer[wnpcid]=0;
+                }
+                NPC_Move(WalkNPC[wnpcid][walknpc_ID], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeZ], 1);
+                WalkNPC[wnpcid][walknpc_PlayerID]=INVALID_PLAYER_ID;
+            }
+            else
+            {
+                new wnpcid=SelectedPlayerid[playerid];
+                if(WNPCFollowTimer[wnpcid]!=0)
+                {
+                    KillTimer(WNPCFollowTimer[wnpcid]);
+                    WNPCFollowTimer[wnpcid]=0;
+                }
+                WalkNPC[wnpcid][walknpc_PlayerID]=playerid;
+                FollowPlayer(wnpcid,playerid);
+                WNPCFollowTimer[wnpcid]=SetTimerEx("FollowPlayer", 2000, 1, "dd", wnpcid,playerid);
+            }
+            return 1;
+        }
+    }
+    return 1;
+}
+
+forward FollowPlayer(wnpcid,playerid);
+public FollowPlayer(wnpcid,playerid)
+{
+    if(IsPlayerConnected(playerid))
+    {
+        new Float:pos[6];
+        GetPlayerPos(playerid, pos[0],pos[1],pos[2]);
+        NPC_GetPos(WalkNPC[wnpcid][walknpc_ID], pos[3],pos[4],pos[5]);
+        new Float:dist=GetDistance(pos[0],pos[1],pos[2],pos[3],pos[4],pos[5]);
+        if(dist>5.0)
+        {
+            NPC_Move(WalkNPC[wnpcid][walknpc_ID],pos[0],pos[1],pos[2], 2);
+        }
+        else
+        {
+            NPC_Move(WalkNPC[wnpcid][walknpc_ID],pos[0],pos[1],pos[2], 1);
+        }
+        
+    }
+    else
+    {
+        if(WNPCFollowTimer[wnpcid]!=0)
+        {
+            KillTimer(WNPCFollowTimer[wnpcid]);
+            WNPCFollowTimer[wnpcid]=0;
+        }
+    
+        NPC_Move(WalkNPC[wnpcid][walknpc_ID], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[wnpcid][walknpc_NextNode]][walknodeZ], 1);
+        WalkNPC[wnpcid][walknpc_PlayerID]=INVALID_PLAYER_ID;
+    }
+    return 1;
+}
+
+stock GetClosestWNPC(playerid)
+{
+	new biz=-1;
+	new Float:dist=99999.9;
+	new Float:pos[6];
+	new Float:dist2;
+	GetPlayerPos(playerid,pos[0],pos[1],pos[2]);
+	for(new i; i<sizeof(WalkNPC); i++)
+	{
+		if(WalkNPC[i][walknpc_Valid]==1)
+		{
+            NPC_GetPos(WalkNPC[i][walknpc_ID], pos[3],pos[4],pos[5]);
+            dist2=GetDistance(pos[0],pos[1],pos[2],pos[3],pos[4],pos[5]);
+            if(dist2<dist)
+            {
+                dist=dist2;
+                biz=i;
+            }
+		}
+	}
+	if(dist>4.0) return -1;
+	return biz;
 }
