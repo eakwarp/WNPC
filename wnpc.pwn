@@ -388,7 +388,10 @@ public OnNPCFinishMove(npcid)
     printf("OnNPCFinishMove NPC %d, WNPC %d finish move",npcid,PlayeridToWNPCid[npcid]);
     //NPC_StopMove(npcid);
     //SetTimerEx("WNPCNextNode", 1000, 0, "d", PlayeridToWNPCid[npcid]);
-	WNPCNextNode(PlayeridToWNPCid[npcid]);
+    if(WalkNPC[PlayeridToWNPCid[npcid]][walknpc_PlayerID]==INVALID_PLAYER_ID)
+	    WNPCNextNode(PlayeridToWNPCid[npcid]);
+    else
+        NPC_StopMove(npcid);
 	return 1;
 }
 forward WNPCNextNode(i);
