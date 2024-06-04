@@ -182,14 +182,17 @@ public WNPCInit()
 forward WNPCreate(i);
 public WNPCreate(i)
 {
-    WalkNPC[i][walknpc_ID]=NPC_Create(WalkNPC[i][walknpc_Name]);
-    PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]=i;
-    printf("WNPC %d created, NPCID %d, playertownpc %d ",i,WalkNPC[i][walknpc_ID], PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]);
-    WalkNPCPosX[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeX];
-    WalkNPCPosY[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeY];
-    WalkNPCPosZ[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeZ];
-    WalkNPC[i][walknpc_Created]=1;
-    printf("WalkNPC %d Load, skin %d node %d",i,WalkNPC[i][walknpc_Skin],WalkNPC[i][walknpc_StartNode]);
+    if(WalkNPC[i][walknpc_Created]==0)
+    {
+        WalkNPC[i][walknpc_ID]=NPC_Create(WalkNPC[i][walknpc_Name]);
+        PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]=i;
+        printf("WNPC %d created, NPCID %d, playertownpc %d ",i,WalkNPC[i][walknpc_ID], PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]);
+        WalkNPCPosX[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeX];
+        WalkNPCPosY[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeY];
+        WalkNPCPosZ[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeZ];
+        WalkNPC[i][walknpc_Created]=1;
+        printf("WalkNPC %d Load, skin %d node %d",i,WalkNPC[i][walknpc_Skin],WalkNPC[i][walknpc_StartNode]);
+    }
     i++;
     if(i<sizeof(WalkNPC))
         SetTimerEx("WNPCreate", 10, 0, "d", i);
@@ -445,7 +448,7 @@ public WNPCNextNode(i)
    	WalkNPC[i][walknpc_OldNode]=thisnodeid;
 	WalkNPC[i][walknpc_NextNode]=nextnodeid;
 	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
-	printf("NPC %d, WNPC %d, moved to nextnode %d",WalkNPC[i][walknpc_ID],i,nextnodeid);
+	//printf("NPC %d, WNPC %d, moved to nextnode %d",WalkNPC[i][walknpc_ID],i,nextnodeid);
     WalkNPC[i][walknpc_Nodes]++;
 	return 1;
 
